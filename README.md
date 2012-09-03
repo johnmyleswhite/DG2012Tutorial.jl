@@ -6,7 +6,7 @@ For those unfamiliar with the concept of SGD methods for fitting models, we can 
 
 In order to keep this movement reasonable, a line search is done along the direction of the gradient that insures that the new model really does improve the model fit on the current row. This is done over and over again in hopes of finding the global minimum.
 
-# Current STatus
+# Current Status
 At the moment, the core functionality can be found in `sgd.jl`. Inside, you'll find:
   * Two basic model types: `LinearModel` and `RidgeModel`.
   * A `LinearModel` is a composite type defined by a set of coefficients.
