@@ -1,8 +1,10 @@
-type LinearModel
+abstract Model
+
+type LinearModel <: Model
   w::Vector{Float64}
 end
 
-type RidgeModel
+type RidgeModel <: Model
   w::Vector{Float64}
   lambda::Float64
 end
@@ -20,38 +22,18 @@ function parse_fields(row::String)
   (x, y)
 end
 
-function predict(lm::LinearModel, x::Vector{Float64}, y::Float64)
-  (x' * lm.w)[1]
-end
+predict(m::Model, x::Vector{Float64}, y::Float64) = dot(x,m.w)
+residual(m::Model, x::Vector{Float64}, y::Float64) = y-predict(m,x,y)
 
-function predict(rm::RidgeModel, x::Vector{Float64}, y::Float64)
-  (x' * rm.w)[1]
-end
+cost(m::LinearModel, x::Vector{Float64}, y::Float64) = 0.5*residual(m,x,y)^2
+cost(m::RidgeModel, x::Vector{Float64}, y::Float64) = 0.5*(residual(m,x,y)^2 + m.lambda*sum(m.w[2:end].^2))
 
-function residual(lm::LinearModel, x::Vector{Float64}, y::Float64)
-  y - predict(lm, x, y)
-end
-
-function residual(rm::RidgeModel, x::Vector{Float64}, y::Float64)
-  y - predict(rm, x, y)
-end
-
-function cost(lm::LinearModel, x::Vector{Float64}, y::Float64)
-  (1.0 / 2.0) * residual(lm, x, y)^2
-end
-
-function cost(rm::RidgeModel, x::Vector{Float64}, y::Float64)
-  (1.0 / 2.0) * residual(rm, x, y)^2 + (rm.lambda / 2.0) * sum(rm.w[2:end].^2)
-end
-
-function gradient(lm::LinearModel, x::Vector{Float64}, y::Float64)
-  residual(lm, x, y) * x
-end
-
-function gradient(rm::RidgeModel, x::Vector{Float64}, y::Float64)
-  dw = residual(rm, x, y) * x - rm.lambda * rm.w
-  dw[1] = residual(rm, x, y) * x[1] # Don't regularize intercept.
-  dw
+gradient(m::LinearModel, x::Vector{Float64}, y::Float64) = residual(m,x,y)*x
+function gradient(m::RidgeModel, x::Vector{Float64}, y::Float64)
+  r = residual(m,x,y)
+  dw = r*x - m.lambda*m.w
+  dw[1] = r*x[1] # Don't regularize intercept.
+  return dw
 end
 
 # Update coefficients.
