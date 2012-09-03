@@ -38,7 +38,7 @@ end
 
 # Update coefficients.
 # Select a step-size using grid-style line search.
-function update(lm::LinearModel, x::Vector{Float64}, y::Float64)
+function update(lm::LinearModel, x::Vector{Float64}, y::Float64, log_state::Bool)
   current_cost = cost(lm, x, y)
   dw = gradient(lm, x, y)
 
@@ -63,7 +63,15 @@ function update(lm::LinearModel, x::Vector{Float64}, y::Float64)
   if any(isnan(lm.w))
     error("NaN's produced as coefficients")
   end
+
+  if log_state
+    f = open("logs/lm.tsv", "a")
+    println(f, join([current_cost, lm.w], "\t"))
+    close(f)
+  end
 end
+
+update(lm::LinearModel, x::Vector{Float64}, y::Float64) = update(lm, x, y, true)
 
 # Update coefficients.
 # Select a step-size using grid-style line search.
@@ -92,7 +100,15 @@ function update(rm::RidgeModel, x::Vector{Float64}, y::Float64)
   if any(isnan(rm.w))
     error("NaN's produced as coefficients")
   end
+
+  if log_state
+    f = open("logs/rm.tsv", "a")
+    println(f, join([current_cost, rm.w], "\t"))
+    close(f)
+  end
 end
+
+update(rm::RidgeModel, x::Vector{Float64}, y::Float64) = update(rm, x, y, true)
 
 function fit(filename::String, lm::LinearModel)
   # Open the data set
