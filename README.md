@@ -27,3 +27,8 @@
 * real_example.jl
 * real_example.R
 
+* At present, it takes longer for R for read the MSD data set into memory than it takes Julia to run an SGD regression on the data.
+* R also uses > 1.5 GB to represent the data set during the loading phase.
+* Can we maintain the superiority of Julia's speed while approaching R's accuracy?
+
+

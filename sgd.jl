@@ -41,7 +41,7 @@ function cost(lm::LinearModel, x::Vector{Float64}, y::Float64)
 end
 
 function cost(rm::RidgeModel, x::Vector{Float64}, y::Float64)
-  (1.0 / 2.0) * residual(rm, x, y)^2 + (lambda / 2.0) * sum(rm.w[2:end].^2)
+  (1.0 / 2.0) * residual(rm, x, y)^2 + (rm.lambda / 2.0) * sum(rm.w[2:end].^2)
 end
 
 function gradient(lm::LinearModel, x::Vector{Float64}, y::Float64)
@@ -49,8 +49,8 @@ function gradient(lm::LinearModel, x::Vector{Float64}, y::Float64)
 end
 
 function gradient(rm::RidgeModel, x::Vector{Float64}, y::Float64)
-  dw = residual(lm, x, y) * x - rm.lambda * rm.w
-  dw[1] = residual * x[1] # Don't regularize intercept.
+  dw = residual(rm, x, y) * x - rm.lambda * rm.w
+  dw[1] = residual(rm, x, y) * x[1] # Don't regularize intercept.
   dw
 end
 
@@ -141,8 +141,8 @@ function fit(filename::String, rm::RidgeModel)
     update(rm, x, y)
     # f = open("logs/rm.tsv", "a")
     # println(f, "Intercept\t$(rm.w[1])")
-    # row = readline(data_file)
-    close(f)
+    # close(f)
+    row = readline(data_file)
   end
 
   close(data_file)
