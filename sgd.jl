@@ -75,7 +75,7 @@ update(lm::LinearModel, x::Vector{Float64}, y::Float64) = update(lm, x, y, true)
 
 # Update coefficients.
 # Select a step-size using grid-style line search.
-function update(rm::RidgeModel, x::Vector{Float64}, y::Float64)
+function update(rm::RidgeModel, x::Vector{Float64}, y::Float64, log_state::Bool)
   current_cost = cost(rm, x, y)
   dw = gradient(rm, x, y)
 
@@ -110,7 +110,7 @@ end
 
 update(rm::RidgeModel, x::Vector{Float64}, y::Float64) = update(rm, x, y, true)
 
-function fit(filename::String, lm::LinearModel)
+function fit(filename::String, lm::LinearModel, log_state::Bool)
   # Open the data set
   data_file = open(filename, "r")
 
@@ -118,7 +118,7 @@ function fit(filename::String, lm::LinearModel)
   row = readline(data_file)
   while length(row) != 0
     (x, y) = parse_fields(chomp(row))
-    update(lm, x, y)
+    update(lm, x, y, log_state)
     # f = open("logs/lm.tsv", "a")
     # println(f, "Intercept\t$(lm.w[1])")
     # close(f)
@@ -128,7 +128,9 @@ function fit(filename::String, lm::LinearModel)
   close(data_file)
 end
 
-function fit(filename::String, rm::RidgeModel)
+fit(filename::String, lm::LinearModel) = fit(filename, lm, false)
+
+function fit(filename::String, rm::RidgeModel, log_state::Bool)
   # Open the data set
   data_file = open(filename, "r")
 
@@ -136,7 +138,7 @@ function fit(filename::String, rm::RidgeModel)
   row = readline(data_file)
   while length(row) != 0
     (x, y) = parse_fields(chomp(row))
-    update(rm, x, y)
+    update(rm, x, y, log_state)
     # f = open("logs/rm.tsv", "a")
     # println(f, "Intercept\t$(rm.w[1])")
     # close(f)
@@ -145,6 +147,8 @@ function fit(filename::String, rm::RidgeModel)
 
   close(data_file)
 end
+
+fit(filename::String, rm::RidgeModel) = fit(filename, rm, false)
 
 function rmse(filename::String, lm::LinearModel)
   # Open the data set
