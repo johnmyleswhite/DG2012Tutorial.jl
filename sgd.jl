@@ -15,6 +15,7 @@ function update(m::Model, x::Vector{Float64}, y::Float64, log_state::Bool)
   dw = gradient(m,x,y)
 
   alphas = (10.0).^-(0:32)
+  push(alphas, 0.0)
   alpha_star = alphas[1]
   least_cost = current_cost
 
@@ -37,8 +38,8 @@ function update(m::Model, x::Vector{Float64}, y::Float64, log_state::Bool)
     error("NaN's produced as coefficients")
   end
   if log_state
-    open("logs/lm.tsv", "a") do f
-      println(f, join([current_cost, lm.w], "\t"))
+    open("logs/model.tsv", "a") do f
+      println(f, join([current_cost, m.w], "\t"))
     end
   end
 end
