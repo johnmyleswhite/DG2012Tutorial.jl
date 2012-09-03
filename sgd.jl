@@ -10,7 +10,7 @@ residual(m::Model, x::Vector{Float64}, y::Float64) = y-predict(m,x,y)
 
 # Update coefficients.
 # Select a step-size using grid-style line search.
-function update(m::Model, x::Vector{Float64}, y::Float64)
+function update(m::Model, x::Vector{Float64}, y::Float64, log_state::Bool)
   current_cost = cost(m,x,y)
   dw = gradient(m,x,y)
 
@@ -36,7 +36,13 @@ function update(m::Model, x::Vector{Float64}, y::Float64)
   if any(isnan(m.w))
     error("NaN's produced as coefficients")
   end
+  if log_state
+    open("logs/lm.tsv", "a") do f
+      println(f, join([current_cost, lm.w], "\t"))
+    end
+  end
 end
+update(m::LinearModel, x::Vector{Float64}, y::Float64) = update(m,x,y,true)
 
 # Parse fields from a row of the CSV file into floats.
 # Appends an intercept term.
