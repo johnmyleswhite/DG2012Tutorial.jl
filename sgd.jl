@@ -42,7 +42,7 @@ function update(m::Model, x::Vector{Float64}, y::Float64, log_state::Bool)
     end
   end
 end
-update(m::LinearModel, x::Vector{Float64}, y::Float64) = update(m,x,y,true)
+update(m::Model, x::Vector{Float64}, y::Float64) = update(m,x,y,true)
 
 # Parse fields from a row of the CSV file into floats.
 # Appends an intercept term.
@@ -61,9 +61,6 @@ function fit(filename::String, m::Model)
     while length(row) != 0
       x, y = parse_fields(chomp(row))
       update(m,x,y)
-      # f = open("logs/m.tsv", "a")
-      # println(f, "Intercept\t$(m.w[1])")
-      # close(f)
       row = readline(data_file)
     end
   end
