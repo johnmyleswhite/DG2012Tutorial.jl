@@ -23,10 +23,9 @@ for i = 1:10
 end
 
 # Can substantially improve performance by setting the intercept term
-# manually to the mode of the data set or some other reasonable initial
-# value.
+# manually to the mean of the data set.
 lm.w = zeros(91)
-lm.w[1] = 2007.0
+lm.w[1] = 1951.0
 
 # See how an improved null model performs.
 println(join([0, rmse("data/training.csv", lm)], "\t"))

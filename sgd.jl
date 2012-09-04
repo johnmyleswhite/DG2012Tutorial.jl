@@ -43,7 +43,7 @@ function update(m::Model, x::Vector{Float64}, y::Float64, log_state::Bool)
     end
   end
 end
-update(m::Model, x::Vector{Float64}, y::Float64) = update(m,x,y,true)
+update(m::Model, x::Vector{Float64}, y::Float64) = update(m,x,y,false)
 
 # Parse fields from a row of the CSV file into floats.
 # Appends an intercept term.
@@ -57,11 +57,29 @@ function parse_fields(row::String)
 end
 
 function fit(filename::String, m::Model)
+  function average(history)
+    sum(history) ./ length(history)
+  end
   open(filename, "r") do data_file
+    history_length = 25_000
+    history = Array(Vector{Float64}, history_length)
+    i = 0
     row = readline(data_file)
     while length(row) != 0
+      i += 1
       x, y = parse_fields(chomp(row))
       update(m,x,y)
+      # Added weight averaging
+      index = i % history_length
+      if index == 0
+        index = history_length
+      end
+      history[index] = lm.w
+      if i > 2 * history_length && index == history_length
+        println("Average: $(average(history))")
+        lm.w = average(history)
+      end
+      # End weight averaging.
       row = readline(data_file)
     end
   end
