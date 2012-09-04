@@ -10,3 +10,6 @@ lm.fit <- lm(y ~ as.matrix(x))
 
 # Assess the RMSE of the fitted model.
 sqrt(mean(residuals(lm.fit)^2))
+
+# Print out coefficients.
+cat(paste(as.numeric(coef(lm.fit)), collapse = "\n"))

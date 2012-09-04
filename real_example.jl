@@ -11,36 +11,54 @@ load("sgd.jl")
 lm = LinearModel(zeros(91))
 
 # See how a null model performs.
-rmse("data/training.csv", lm)
-rmse("data/validation.csv", lm)
+println(join([0, rmse("data/training.csv", lm)], "\t"))
+println(join([0, rmse("data/validation.csv", lm)], "\t"))
 
-# Fit the model.
-fit("data/training.csv", lm)
-
+# Iteratively fit the model.
 # See how the fitted model performs.
-rmse("data/training.csv", lm)
-rmse("data/validation.csv", lm)
-
-# Multiple passes through the data do help because the SGD algorithm does
-# not run to convergence by default.
-fit("data/training.csv", lm)
-
-rmse("data/training.csv", lm)
-rmse("data/validation.csv", lm)
-
-fit("data/training.csv", lm)
-
-rmse("data/training.csv", lm)
-rmse("data/validation.csv", lm)
+for i = 1:10
+  fit("data/training.csv", lm)
+  println(join([i, rmse("data/training.csv", lm)], "\t"))
+  println(join([i, rmse("data/validation.csv", lm)], "\t"))
+end
 
 # Can substantially improve performance by setting the intercept term
-# manually to the mode of the data set.
+# manually to the mode of the data set or some other reasonable initial
+# value.
+lm.w = zeros(91)
 lm.w[1] = 2007.0
 
-fit("data/training.csv", lm)
+# See how an improved null model performs.
+println(join([0, rmse("data/training.csv", lm)], "\t"))
+println(join([0, rmse("data/validation.csv", lm)], "\t"))
 
-rmse("data/training.csv", lm)
-rmse("data/validation.csv", lm)
+# Iteratively fit the model.
+# See how the fitted model performs.
+for i = 1:10
+  fit("data/training.csv", lm)
+  println(join([i, rmse("data/training.csv", lm)], "\t"))
+  println(join([i, rmse("data/validation.csv", lm)], "\t"))
+end
+
+# Consider optimum reached by R.
+weights = csvread("real_target.csv")
+
+lm.w = weights[:, 1]
+
+# See how an improved null model performs.
+println(join([0, rmse("data/training.csv", lm)], "\t"))
+println(join([0, rmse("data/validation.csv", lm)], "\t"))
+
+# Iteratively fit the model.
+# See how the fitted model performs.
+for i = 1:10
+  fit("data/training.csv", lm)
+  println(join([i, rmse("data/training.csv", lm)], "\t"))
+  println(join([i, rmse("data/validation.csv", lm)], "\t"))
+end
+
+# This is very strange. Model fitting moves away from the optimum.
+# Need to understand why. Broken gradient?
 
 ###
 #
@@ -52,12 +70,13 @@ rmse("data/validation.csv", lm)
 rm = RidgeModel(zeros(91), 10e-2)
 
 # See how a null model performs.
-rmse("data/training.csv", rm)
-rmse("data/validation.csv", rm)
+println(join([0, rmse("data/training.csv", rm)], "\t"))
+println(join([0, rmse("data/validation.csv", rm)], "\t"))
 
-# Fit the model.
-fit("data/training.csv", rm)
-
+# Iteratively fit the model.
 # See how the fitted model performs.
-rmse("data/training.csv", rm)
-rmse("data/validation.csv", rm)
+for i = 1:10
+  fit("data/training.csv", lm)
+  println(join([i, rmse("data/training.csv", rm)], "\t"))
+  println(join([i, rmse("data/validation.csv", rm)], "\t"))
+end
