@@ -11,6 +11,7 @@ residual(m::Model, x::Vector{Float64}, y::Float64) = y-predict(m,x,y)
 # Update coefficients.
 # Select a step-size using grid-style line search.
 function update(m::Model, x::Vector{Float64}, y::Float64, log_state::Bool)
+  m.n += 1
   current_cost = cost(m,x,y)
   dw = gradient(m,x,y)
 
@@ -118,12 +119,18 @@ end
 
 type LinearModel <: Model
   w::Vector{Float64}
+  n::Int64
 end
+
+LinearModel(w::Vector{Float64}) = LinearModel(w, 0)
 
 type RidgeModel <: Model
   w::Vector{Float64}
   lambda::Float64
+  n::Int64
 end
+
+RidgeModel(w::Vector{Float64}, lambda::Float64) = RidgeModel(w, lambda, 0)
 
 cost(m::LinearModel, x::Vector{Float64}, y::Float64) = 0.5*residual(m,x,y)^2
 cost(m::RidgeModel, x::Vector{Float64}, y::Float64) =
