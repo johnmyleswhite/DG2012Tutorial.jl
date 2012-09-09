@@ -1,4 +1,4 @@
-# Generate a toy data set to test on.
+# Generate an example data set to test on.
 load("distributions.jl")
 load("sgd.jl")
 

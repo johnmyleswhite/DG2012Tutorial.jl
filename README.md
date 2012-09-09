@@ -34,11 +34,15 @@ In order to move along the gradient, a distance must be chosen at each step. Thi
 
 # Walkthrough
 
-To try this code, start with our toy example. Run the following scripts in the following order:
+To try this code, start with our basic examples. Run the following scripts in the following order:
 
-* toy_generate_data.jl
-* toy_example.jl
-* toy_example.R
+* ols_generate_data.jl
+* ols_example.jl
+* ols_example.R
+
+* logistic_generate_data.jl
+* logistic_example.jl
+* logistic_example.R
 
 After that, you'll want to try working on a real problem. To do that, you'll first need to download the MSD data set from the UCI ML repository. You can find that data set at http://archive.ics.uci.edu/ml/datasets/YearPredictionMSD
 
