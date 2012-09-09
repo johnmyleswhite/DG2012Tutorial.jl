@@ -1,4 +1,5 @@
-# General purpose utility link function.
+## General Purpose Utility Functions ##
+
 function invlogit(z::Float64)
   if z < -100.0
     return 0.0
