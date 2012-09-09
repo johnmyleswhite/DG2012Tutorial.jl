@@ -1,3 +1,14 @@
+# General purpose utility link function.
+function invlogit(z::Float64)
+  if z < -100.0
+    return 0.0
+  elseif z > 100.0
+    return 1.0
+  else
+    return 1.0 / (1.0 + exp(-z))
+  end
+end
+
 ## Generic Model Functionality ##
 
 abstract Model
@@ -22,9 +33,6 @@ residuals(m::Model, x::Vector{Float64}, y::Float64) = y - predict(m, x)
 function residuals(m::Model, x::Matrix{Float64}, y::Vector{Float64})
   n = size(x, 1)
   p = size(x, 2)
-  # if n != length(y)
-  #   error("x and y must have the same length")
-  # end
   res = zeros(n)
   for i = 1:n
     res[i] = y[i] - predict(m, reshape(x[i, :], p))
@@ -34,9 +42,11 @@ end
 
 # Update coefficients.
 # Modify to handle multiple examples at once.
+# Defaults to SGD, but can be set to do gradient ascent.
 function update(m::Model,
                 x::Union(Vector{Float64}, Matrix{Float64}),
                 y::Union(Float64, Vector{Float64}),
+                minimize::Bool,
                 learning_rate::Float64,
                 learning_rule::Symbol,
                 averaging::Bool)
@@ -49,7 +59,11 @@ function update(m::Model,
 
   # Evaluate the gradient on these examples.
   # This needs to be customized for vector vs. matrix inputs.
-  dw = -gradient(m, x, y)
+  if minimize
+    dw = -gradient(m, x, y)
+  else
+    dw = gradient(m, x, y)  
+  end
 
   # Use Scikits-Learning style learning rate schedules.
   if learning_rule == :constant
@@ -78,7 +92,7 @@ end
 function update(m::Model,
                 x::Union(Vector{Float64}, Matrix{Float64}),
                 y::Union(Float64, Vector{Float64}))
-  update(m, x, y, 0.01, :constant, false)
+  update(m, x, y, true, 0.01, :constant, false)
 end
 
 # Parse fields from a row of the CSV file into floats.
@@ -94,6 +108,7 @@ end
 
 function fit(m::Model,
              filename::String,
+             minimize::Bool,
              epochs::Int64,
              minibatch_size::Int64,
              learning_rate::Float64,
@@ -129,7 +144,7 @@ function fit(m::Model,
             push(y, tmp_y)
           end
         end
-        update(m, x, y, learning_rate, learning_rule, averaging)
+        update(m, x, y, minimize, learning_rate, learning_rule, averaging)
         if logging && m.n % interval_length == 0
           println(join({"Iteration: $(m.n)", m.w}, "\t"))
         end
@@ -143,12 +158,12 @@ function fit(m::Model,
 end
 
 function fit(m::Model, filename::String, epochs::Int64)
-  fit(m, filename, epochs, 1, 0.001, :constant, true, false, false, 0)
+  fit(m, filename, true, epochs, 1, 0.001, :constant, true, false, false, 0)
 end
 
 # Run for 1 epoch by default.
 function fit(m::Model, filename::String)
-  fit(m, filename, 1, 1, 0.001, :constant, true, false, false, 0)
+  fit(m, filename, true, 1, 1, 0.001, :constant, true, false, false, 0)
 end
 
 function rmse(m::Model, filename::String)
@@ -202,9 +217,32 @@ end
 
 RidgeModel(w::Vector{Float64}, lambda::Float64) = RidgeModel(w, lambda, 0, 0)
 
+type LogisticModel <: Model
+  w::Vector{Float64}
+  n::Int64
+  epoch::Int64
+end
+
+LogisticModel(w::Vector{Float64}) = LogisticModel(w, 0, 0)
+
+# Logistic model requires slightly different generic method implementations.
+function predict(m::LogisticModel, x::Vector{Float64})
+  z = dot(x, m.w)
+  return invlogit(z)
+end
+
+# Logistic model uses gradient ascent, not descent.
+function fit(m::LogisticModel, filename::String, epochs::Int64)
+  fit(m, filename, false, epochs, 1, 0.001, :constant, true, false, false, 0)
+end
+function fit(m::LogisticModel, filename::String)
+  fit(m, filename, false, 1, 1, 0.001, :constant, true, false, false, 0)
+end
+
 cost(m::LinearModel, x::Vector{Float64}, y::Float64) = 0.5*residuals(m,x,y)^2
 cost(m::RidgeModel, x::Vector{Float64}, y::Float64) =
     0.5*(residual(m,x,y)^2 + m.lambda*sum(m.w[2:end].^2))
+log_likelihood(m::LogisticModel, x::Vector{Float64}, y::Float64) = log(predict(m, x))
 function cost(m::LinearModel, x::Matrix{Float64}, y::Vector{Float64})
   n = size(x, 1)
   p = size(x, 2)
@@ -224,6 +262,15 @@ function cost(m::RidgeModel, x::Matrix{Float64}, y::Vector{Float64})
   total_cost += m.lambda * sum(m.w[2:end].^2)
   return total_cost
 end
+function log_likelihood(m::LogisticModel, x::Matrix{Float64}, y::Vector{Float64})
+  n = size(x, 1)
+  p = size(x, 2)
+  ll = 0.0
+  for i = 1:n
+    ll += log_likelihood(m, reshape(x[i, :], p), y)
+  end
+  return ll
+end
 
 gradient(m::LinearModel, x::Vector{Float64}, y::Float64) = residuals(m,x,y)*(-x)
 function gradient(m::RidgeModel, x::Vector{Float64}, y::Float64)
@@ -232,13 +279,15 @@ function gradient(m::RidgeModel, x::Vector{Float64}, y::Float64)
   dw[1] = r*(-x[1])
   return dw
 end
-function gradient(m::LinearModel, x::Matrix{Float64}, y::Vector{Float64})
+gradient(m::LogisticModel, x::Vector{Float64}, y::Float64) = (y - predict(m, x)) * x
+function gradient(m::Model, x::Matrix{Float64}, y::Vector{Float64})
   n = size(x, 1)
   p = size(x, 2)
   summed_gradient = zeros(p)
   for i = 1:n
     summed_gradient += gradient(m, reshape(x[i, :], p), y[i])
   end
+  summed_gradient = (1.0 / n) * summed_gradient
   return summed_gradient
 end
 function gradient(m::RidgeModel, x::Matrix{Float64}, y::Vector{Float64})
@@ -250,6 +299,7 @@ function gradient(m::RidgeModel, x::Matrix{Float64}, y::Vector{Float64})
     r = residuals(m, local_x, y[i])
     summed_gradient += r * (-local_x)
   end
+  summed_gradient = (1.0 / n) * summed_gradient
   for j = 2:p
     summed_gradient[j] += m.lambda * m.w[j]
   end

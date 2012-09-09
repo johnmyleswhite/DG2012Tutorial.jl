@@ -10,6 +10,10 @@ load("sgd.jl")
 # Initialize the model. Have to know that there 90 predictors + 1 intercept.
 lm = LinearModel(zeros(91))
 
+# Exploit all options.
+fit(lm, "data/training.csv", 1, 2500, 10e-12, :constant, true, true, false, 5000)
+fit(lm, "data/scaled_training.csv", 1, 500, 10e-11, :constant, true, true, false, 1000)
+
 # See how a null model performs.
 println(join([0, rmse("data/training.csv", lm)], "\t"))
 println(join([0, rmse("data/validation.csv", lm)], "\t"))
